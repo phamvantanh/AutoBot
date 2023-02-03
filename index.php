@@ -119,4 +119,3 @@ function logging_to_txt_file($text_to_log) {
     fclose($fp);
 }
 
-?>
