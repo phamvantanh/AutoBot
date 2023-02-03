@@ -11,13 +11,6 @@ $app_secret = '9e96efc39dd74ac2398dbc70b2ddcd08';
 $access_token = 'DQVJ2RWJrUER0YlQ3UnlnZAEw3VkFlLTc2SVNZAT05RRm1rMEFwMGNLYjVpQ3N0NDY0dFZAEZAkNkZATJuUFM0NFRTLXR0TzVOTE9wTTU5cjVWTDl1aTNnb29qcTJmb2xYNTF0X2l3OVF6MGVVSk9VT0JrTVBHSEFZAZAllMRjRWaTBmdkFOYUZAvaFVjV0NQVFdmcGVBcDVFRHdiTDZAHRE9jNjVjY0I2VTBFWFYycElLVEVneFF5ZAU9zVzdKTG1kb0pLUWYwdDlXdHh2b2JrNEdCUjNNSQZDZD';
 $verify_token = 'phamvantanh_chatbot';
 
-// Questions specific to the FAQ bot
-$questions_and_answers = array(
-	"travel" => "https://work.workplace.com/work/knowledge/2640967899488641",
-	"training" => "https://work.workplace.com/work/knowledge/2640968196155278",
-	"helpdesk" => "https://work.workplace.com/work/knowledge/2640967599488671",
-	"london" => "https://work.workplace.com/work/knowledge/2730400090545421"
-);
 
 // We need to response to the challenge when we save changes for webhooks in the Workplace Integrations panel
 if (isset($_GET['hub_verify_token']) && $_GET['hub_verify_token'] == $verify_token) {
@@ -39,7 +32,7 @@ if (!isset($headers['X-Hub-Signature']) || ($headers['X-Hub-Signature'] != $sign
 }
 
 // Obtain data sent by the webhook
-$request_body = file_get_contents('php://input');
+$data = json_decode($request_body, true);
 logging_to_txt_file($request_body);
 // Obtain recipient id from the webhook event data
 $recipient = $data['entry'][0]['messaging'][0]['sender']['id'];
@@ -53,7 +46,7 @@ curl_setopt($ch, CURLOPT_POST, 1);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt( $ch, CURLOPT_HTTPHEADER, array(
     'Content-Type:application/json',
-    'User-Agent:GithubRep-HRFAQBot',
+    'User-Agent:GithubRep-SupportBot',
     'Authorization:Bearer ' . $access_token
 ));
 
@@ -65,40 +58,84 @@ $fields = array(
  );
 $fields_string = json_encode($fields);
 curl_setopt($ch, CURLOPT_POSTFIELDS, $fields_string);
+
 $server_output = curl_exec($ch); // We can optionally process the server output
 
 
 // We compose a different response depending on the text that the user sent to the bot
-if ("faq" == $received_text) { // When the word faq is received
+if ("support" == $received_text) { // When the word support is received
 	$fields = array(
-		"message" => array("text" => "Hello! Thanks for using our FAQ service. Please type a keyword or any question that you may have."),
+		"message" => array(
+			"text" => "What are you looking for?",
+			"quick_replies" => array(
+				array(
+					"content_type" => "text",
+					"title" => "Device Issue",
+					"payload" => "device_issue",
+					"image_url" => "https://img.icons8.com/computer-support"
+				),
+				array(
+					"content_type" => "text",
+					"title" => "Report Incidence",
+					"payload" => "report_incidence",
+					"image_url" => "https://img.icons8.com/solve"
+				),
+				array(
+					"content_type" => "text",
+					"title" => "Request Access to Tool",
+					"payload" => "request_access",
+					"image_url" => "https://img.icons8.com/lock"
+        		)
+			)
+		),
 	    "recipient" => array("id" => $recipient),
 	    "messaging_type" => "RESPONSE"
 	);
 } else {
-	// Chopping sentence to see if there is a word that is part of my q&a array
-	$parts = explode(" ", $received_text);
-	foreach ($parts as $part) {
-		$part = strtolower($part);
-		if (isset($questions_and_answers[$part])) {
-			$answer = $questions_and_answers[$part];
-			break;
+	if (isset($data['entry'][0]['messaging'][0]['message']['quick_reply']['payload'])) { // We check if a payload was received from the webhook, i.e. if any quick reply button was pushed
+		$quick_reply = $data['entry'][0]['messaging'][0]['message']['quick_reply']['payload'];
+		if ("device_issue" == $quick_reply) { // When the quick reply button is that of the device issue
+			$fields = array(
+				"message" => array(
+	        		"text" => "Could you tell us which device is affected?",
+	        		"quick_replies" => array(
+	                		array(
+	                  		"content_type" => "text",
+	                  		"title" => "Computer Issue",
+	                  		"payload" => "computer_issue",
+	                  		"image_url" => "https://img.icons8.com/computer"
+	                		),
+	                		array(
+	                  		"content_type" => "text",
+	                  		"title" => "Mobile Phone Issue",
+							"payload" => "mobile_issue",
+							"image_url" => "https://img.icons8.com/mobile"
+	                    )
+					)
+	      		),
+		      	"recipient" => array("id" => $recipient),
+		      	"messaging_type" => "RESPONSE"
+    		);
+		} else if ("computer_issue" == $quick_reply) { // When the quick reply button is that of the computer issue
+			$fields = array(
+		      	"message" => array("text" => "A ticket has been opened and someone from Helpdesk should be contacting you shortly to fix it"),
+		      	"recipient" => array("id" => $recipient),
+		      	"messaging_type" => "RESPONSE"
+    		);
+		} else if ("mobile_issue" == $quick_reply) { // When the quick reply button is that of the mobile issue
+			$fields = array(
+		        "message" => array("text" => "A ticket has been opened and someone from Helpdesk should be contacting you shortly to replace your mobile device"),
+		        "recipient" => array("id" => $recipient),
+		        "messaging_type" => "RESPONSE"
+			);
+		
 		}
-	}
-
-	// Compose the response accordingly
-	if (isset($answer)) {
-		$fields = array(
-			"message" => array("text" => "I found this answer for you related to " . ucfirst($part) . ": " . $answer),
-			"recipient" => array("id" => $recipient),
-			"messaging_type" => "RESPONSE"
-	    );
 	} else {
 		$fields = array(
-			"message" => array("text" => "Unfortunately I couldn't find an answer. Please try with other question."),
+			"message" => array("text" => "Unfortunately I don't understand this command. Please try with other command."),
 			"recipient" => array("id" => $recipient),
 			"messaging_type" => "RESPONSE"
-	    );
+		);
 	}
 }
 
@@ -119,3 +156,4 @@ function logging_to_txt_file($text_to_log) {
     fclose($fp);
 }
 
+?>
