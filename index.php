@@ -7,7 +7,7 @@ error_reporting(E_ALL);
 
 // Variables to be replaced
 // Ideally we would store them securely outside of this script
-$app_secret = 'app_secret';
+$app_secret = '9e96efc39dd74ac2398dbc70b2ddcd08';
 $access_token = 'DQVJ2RWJrUER0YlQ3UnlnZAEw3VkFlLTc2SVNZAT05RRm1rMEFwMGNLYjVpQ3N0NDY0dFZAEZAkNkZATJuUFM0NFRTLXR0TzVOTE9wTTU5cjVWTDl1aTNnb29qcTJmb2xYNTF0X2l3OVF6MGVVSk9VT0JrTVBHSEFZAZAllMRjRWaTBmdkFOYUZAvaFVjV0NQVFdmcGVBcDVFRHdiTDZAHRE9jNjVjY0I2VTBFWFYycElLVEVneFF5ZAU9zVzdKTG1kb0pLUWYwdDlXdHh2b2JrNEdCUjNNSQZDZD';
 $verify_token = 'phamvantanh_chatbot';
 
